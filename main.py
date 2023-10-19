@@ -5,6 +5,8 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
 
 # Load the dataset
 with open('bfn_exercise.pkl', 'rb') as file:
@@ -13,37 +15,22 @@ with open('bfn_exercise.pkl', 'rb') as file:
 # Extract 'emb_smiles' and 'logp'
 X = np.array([row['emb_smiles'] for row in data])
 y = np.array([row['logp'] for row in data])
-
+X = X[:10000]
+y = y[:10000]
+print(X)
 # Split the data into train and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Define a simple neural network regressor
-class Regressor(nn.Module):
-    def __init__(self):
-        super(Regressor, self).__init__()
-        self.fc = nn.Linear(256, 1)
+print("regressor")
+regressor = RandomForestRegressor(n_estimators=100, random_state=42)
+print("regr")
+regressor.fit(X_train, y_train)
+print("reg")
+y_pred = regressor.predict(X_test)
+print(y_pred)
+mse = mean_squared_error(y_test, y_pred)
+print(f"Mean Squared Error: {mse}")
 
-    def forward(self, x):
-        return self.fc(x)
-
-# Train the regressor
-regressor = Regressor()
-optimizer = optim.Adam(regressor.parameters(), lr=0.001)
-criterion = nn.MSELoss()
-
-epochs = 1000
-for epoch in range(epochs):
-    optimizer.zero_grad()
-    outputs = regressor(torch.Tensor(X_train))
-    loss = criterion(outputs.view(-1), torch.Tensor(y_train))
-    loss.backward()
-    optimizer.step()
-"""
-# Test the regressor on the test set
-test_predictions = regressor(torch.Tensor(X_test)).detach().numpy()
-mse = mean_squared_error(y_test, test_predictions)
-print("Mean Squared Error:", mse)
-"""
 def scale_data(data):
     min_val = data.min()
     max_val = data.max()
